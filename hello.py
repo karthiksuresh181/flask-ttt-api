@@ -3,7 +3,10 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return "Hello World"
+    if request.method == "POST":
+        return "Post Method Call Success"
+    else:
+        return "Get Method Call Success"
 
 if __name__ == '__main__':
     app.run()
