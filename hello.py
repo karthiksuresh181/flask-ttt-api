@@ -5,7 +5,7 @@ app = Flask(__name__)
 @app.route('/', methods = ['POST', 'GET'])
 def index():
     if request.method == "POST":
-        return "Post Method Call Success"
+        return "Post Method Call Success, {}".format(request.get_json())
     else:
         return "Get Method Call Success"
 
