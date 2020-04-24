@@ -45,6 +45,7 @@ def bestMove(board, model, player, rnd=0):
         if random.random() * rnd < 0.5:
             return moves[bestMoves[i]]
 
+
     # Choose a move completely at random
     return moves[random.randint(0, len(moves) - 1)]
 
@@ -77,7 +78,7 @@ def something(board, playerToMove):
     model = load_model("tictactoe.h5")
     move = bestMove(board, model, playerToMove, 0)
     board[move[0]][move[1]] = playerToMove
-    return board
+    return board, "{}{}".format(move[0], move[1])
 
 @app.route('/', methods = ['POST', 'GET'])
 @cross_origin(origin='*',headers=['Content-Type','Authorization'])
@@ -85,12 +86,9 @@ def index():
     if request.method == "POST":
         board = request.get_json()
         py_board = convert_py_board(board['board'])
-        py_board = something(py_board, 2)
+        py_board, index = something(py_board, 2)
         board = convert_back_board(py_board)
-        for i in py_board:
-            print(i)
-        print(board)
-        return jsonify(board)
+        return jsonify(board, index)
     else:
         return "Method Not Allowed"
 
