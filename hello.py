@@ -44,7 +44,7 @@ def index():
         print(board)
         return jsonify("Post Method Call Success, {}".format(request.get_json()))
     else:
-        return "Method Not Allowed"
+        return "Method Not Allowed" #test comment
 
 if __name__ == '__main__':
     app.run()
