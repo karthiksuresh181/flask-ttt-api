@@ -1,11 +1,52 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
 from functools import reduce
+import numpy as np
+import random
+from keras.models import load_model
 
 app = Flask(__name__)
 
 cors = CORS(app, resources={r"/foo": {"origins": "*"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
+
+def getMoves(board):
+    moves = []
+    for i in range(len(board)):
+        for j in range(len(board[i])):
+            if board[i][j] == 0:
+                moves.append((i, j))
+    return moves
+
+def bestMove(board, model, player, rnd=0):
+    scores = []
+    moves = getMoves(board)
+    
+    # Make predictions for each possible move
+    for i in range(len(moves)):
+        future = np.array(board)
+        future[moves[i][0]][moves[i][1]] = player
+        prediction = model.predict(future.reshape((-1, 9)))[0]
+        if player == 1:
+            winPrediction = prediction[1]
+            lossPrediction = prediction[2]
+        else:
+            winPrediction = prediction[2]
+            lossPrediction = prediction[1]
+        drawPrediction = prediction[0]
+        if winPrediction - lossPrediction > 0:
+            scores.append(winPrediction - lossPrediction)
+        else:
+            scores.append(drawPrediction - lossPrediction)
+
+    # Choose the best move with a random factor
+    bestMoves = np.flip(np.argsort(scores))
+    for i in range(len(bestMoves)):
+        if random.random() * rnd < 0.5:
+            return moves[bestMoves[i]]
+
+    # Choose a move completely at random
+    return moves[random.randint(0, len(moves) - 1)]
 
 def convert_py_board(board):
     for i in range(len(board)):
@@ -32,19 +73,26 @@ def convert_back_board(board):
             board[i] = 'O'
     return board
 
+def something(board, playerToMove):
+    model = load_model("tictactoe.h5")
+    move = bestMove(board, model, playerToMove, 0)
+    board[move[0]][move[1]] = playerToMove
+    return board
+
 @app.route('/', methods = ['POST', 'GET'])
 @cross_origin(origin='*',headers=['Content-Type','Authorization'])
 def index():
     if request.method == "POST":
         board = request.get_json()
         py_board = convert_py_board(board['board'])
+        py_board = something(py_board, 2)
         board = convert_back_board(py_board)
         for i in py_board:
             print(i)
         print(board)
-        return jsonify("Post Method Call Success, {}".format(request.get_json()))
+        return jsonify(board)
     else:
-        return "Method Not Allowed" #test comment
+        return "Method Not Allowed"
 
 if __name__ == '__main__':
-    app.run()
+    app.run(threaded=False)
